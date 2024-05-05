@@ -1,0 +1,60 @@
+DELIMITER //
+
+CREATE PROCEDURE AgregarCompraYActualizarStock(
+    IN p_identificacion INT,
+    IN p_estado_compra VARCHAR(15),
+    IN p_descuento INT,
+    IN p_direccion VARCHAR(100),
+    IN p_fecha DATE,
+    IN p_id_producto INT,
+    IN p_cantidad INT,
+    IN p_variablesproducto VARCHAR(100)
+)
+BEGIN
+    DECLARE v_stock INT;
+    DECLARE v_precio INT;
+    DECLARE v_id_compra INT;
+    DECLARE v_stock_suficiente BOOLEAN DEFAULT TRUE;
+
+    -- Comienza la transacción
+    START TRANSACTION;
+    
+    -- Verifica el stock actual del producto
+    SELECT stock, precio INTO v_stock, v_precio
+    FROM producto
+    WHERE id_prod = p_id_producto;
+
+    -- Comprueba si hay suficiente stock
+    IF v_stock < p_cantidad THEN
+        SET v_stock_suficiente = FALSE;
+        SET MESSAGE_TEXT = 'No hay suficiente stock para realizar la compra';
+    END IF;
+
+    -- Si hay stock, proceder con la creación de la compra
+    IF v_stock_suficiente THEN
+        -- Inserta la nueva compra
+        INSERT INTO compra(estado_compra, descuento, direccion, fecha, identificacion)
+        VALUES (p_estado_compra, p_descuento, p_direccion, p_fecha, p_identificacion);
+        
+        -- Obtiene el ID de la compra recién insertada
+        SET v_id_compra = LAST_INSERT_ID();
+        
+        -- Inserta el detalle de la compra
+        INSERT INTO detalle_compra(cantidad, variablesproducto, id_comp, id_prod)
+        VALUES (p_cantidad, p_variablesproducto, v_id_compra, p_id_producto);
+        
+        -- Actualiza el stock del producto
+        UPDATE producto
+        SET stock = stock - p_cantidad
+        WHERE id_prod = p_id_producto;
+        
+        -- Si todo salió bien, commit de la transacción
+        COMMIT;
+    ELSE
+        -- Si no hay suficiente stock, rollback de la transacción
+        ROLLBACK;
+    END IF;
+    
+END//
+
+DELIMITER ;

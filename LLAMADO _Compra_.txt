@@ -1,0 +1,10 @@
+CALL AgregarCompraYActualizarStock(
+    1029129,              -- identificación del usuario
+    'En proceso',         -- estado de la compra
+    10,                   -- descuento aplicado
+    'calle34',            -- dirección de envío
+    '2024-05-04',         -- fecha de la compra
+    1,                    -- ID del producto
+    2,                    -- cantidad del producto
+    'Color: Rojo, Tamaño: Grande' -- variables del producto
+);
